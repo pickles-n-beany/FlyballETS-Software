@@ -1,4 +1,7 @@
 #include "WebHandler.h"
+#include <Arduino.h>
+#include "config.h"
+#include "Structs.h"
 
 void WebHandlerClass::init(int webPort)
 {
@@ -284,158 +287,82 @@ void WebHandlerClass::_WsEvent(AsyncWebSocket *server, AsyncWebSocketClient *cli
 
 bool WebHandlerClass::_DoAction(JsonObject ActionObj, String *ReturnError, AsyncWebSocketClient *Client)
 {
-   String ActionType = ActionObj["actionType"];
-   String ActionData = ActionObj["actionData"];
-   if (ActionType == "UpdateRace")
-   {
-      if (RaceHandler.RaceState == RaceHandler.STOPPED || RaceHandler.RaceState == RaceHandler.RESET)
-      {
-         bUpdateRaceData = true;
-         bSendLightsAndRaceData = true;
-         return true;
-      }
-      else
-      {
-         return false;
-      }
-   }
-   if (ActionType == "StartRace")
-   {
-      if (RaceHandler.RaceState != RaceHandler.RESET)
-      {
-         return false;
-      }
-      else
-      {
-         if (LightsController.bModeNAFA)
-            LightsController.WarningStartSequence();
-         else
-            LightsController.InitiateStartSequence();
-         return true;
-      }
-   }
-   else if (ActionType == "StopRace")
-   {
-      if (RaceHandler.RaceState == RaceHandler.STOPPED || RaceHandler.RaceState == RaceHandler.RESET)
-      {
-         bUpdateTimerWebUIdata = true;
-         bSendLightsAndRaceData = true;
-         return false;
-      }
-      else
-      {
-         LightsController.DeleteSchedules();
-         RaceHandler.bExecuteStopRace = true;
-         return true;
-      }
-   }
-   else if (ActionType == "ResetRace")
-   {
-      if (RaceHandler.RaceState != RaceHandler.STOPPED)
-      {
-         bUpdateTimerWebUIdata = true;
-         bSendLightsAndRaceData = true;
-         return false;
-      }
-      else
-      {
-         RaceHandler.bExecuteResetRace = true;
-         LightsController.bExecuteResetLights = true;
-         return true;
-      }
-   }
-   else if (ActionType == "SetDogFault")
-   {
-      if (ActionData == "null")
-      {
-         return false;
-      }
-      uint8_t iDogNum = ActionObj["actionData"]["dogNr"];
-      RaceHandler.SetDogFault(iDogNum);
-      return true;
-   }
-   else if (ActionType == "AnnounceConsumer")
-   {
-      log_d("We have a consumer with ID %i and IP %s", Client->id(), Client->remoteIP().toString().c_str());
-      if (!_bIsConsumerArray[Client->id()])
-      {
-         _iNumOfConsumers++;
-      }
-      _bIsConsumerArray[Client->id()] = true;
-      bUpdateRaceData = true;
-      bSendLightsAndRaceData = true;
-      return true;
-   }
-   else if (ActionType == "SetDogs4")
-   {
-      if (RaceHandler.RaceState != RaceHandler.RESET)
-      {
-         bSendLightsAndRaceData = true;
-         return false;
-      }
-      else
-      {
-         RaceHandler.SetNumberOfDogs(4);
-         return true;
-      }
-   }
-   else if (ActionType == "SetDogs3")
-   {
-      if (RaceHandler.RaceState != RaceHandler.RESET)
-      {
-         bSendLightsAndRaceData = true;
-         return false;
-      }
-      else
-      {
-         RaceHandler.SetNumberOfDogs(3);
-         return true;
-      }
-   }
-   else if (ActionType == "SetDogs2")
-   {
-      if (RaceHandler.RaceState != RaceHandler.RESET)
-      {
-         bSendLightsAndRaceData = true;
-         return false;
-      }
-      else
-      {
-         RaceHandler.SetNumberOfDogs(2);
-         return true;
-      }
-   }
-   else if (ActionType == "SetDogs1")
-   {
-      if (RaceHandler.RaceState != RaceHandler.RESET)
-      {
-         bSendLightsAndRaceData = true;
-         return false;
-      }
-      else
-      {
-         RaceHandler.SetNumberOfDogs(1);
-         return true;
-      }
-   }
-   else if (ActionType == "SetRerunsOff")
-   {
-      if ((ActionData == "null") || (RaceHandler.RaceState != RaceHandler.RESET))
-      {
-         return false;
-      }
-      bool _bRerunsOff = ActionObj["actionData"]["rerunsOff"];
-      if (_bRerunsOff)
-         RaceHandler.ToggleRerunsOffOn(1);
-      else
-         RaceHandler.ToggleRerunsOffOn(0);
-      return true;
-   }
-   else
-   {
-      log_d("Unknown action received: %s", ActionType.c_str());
-      return false;
-   }
+    String ActionType = ActionObj["actionType"];
+    String ActionData = ActionObj["actionData"];
+
+    if (ActionType == "UpdateRace") {
+        if (RaceHandler.RaceState == RaceHandler.STOPPED || RaceHandler.RaceState == RaceHandler.RESET) {
+            bUpdateRaceData = true;
+            bSendLightsAndRaceData = true;
+            return true;
+        }
+        return false;
+    }
+
+    if (ActionType == "StartRace") {
+        LightsController.InitiateStartSequence();
+        return true;
+    }
+
+    if (ActionType == "StopRace") {
+        if (RaceHandler.RaceState == RaceHandler.STOPPED || RaceHandler.RaceState == RaceHandler.RESET) {
+            bUpdateTimerWebUIdata = true;
+            bSendLightsAndRaceData = true;
+            return false;
+        }
+        LightsController.DeleteSchedules();
+        RaceHandler.bExecuteStopRace = true;
+        return true;
+    }
+
+    if (ActionType == "ResetRace") {
+        if (RaceHandler.RaceState != RaceHandler.STOPPED) {
+            bUpdateTimerWebUIdata = true;
+            bSendLightsAndRaceData = true;
+            return false;
+        }
+        RaceHandler.bExecuteResetRace = true;
+        LightsController.bExecuteResetLights = true;
+        return true;
+    }
+
+    if (ActionType == "SetDogFault") {
+        if (ActionData == "null") return false;
+        RaceHandler.SetDogFault(ActionObj["actionData"]["dogNr"]);
+        return true;
+    }
+
+    if (ActionType == "AnnounceConsumer") {
+        log_d("We have a consumer with ID %i and IP %s", Client->id(), Client->remoteIP().toString().c_str());
+        if (!_bIsConsumerArray[Client->id()]) _iNumOfConsumers++;
+        _bIsConsumerArray[Client->id()] = true;
+        bUpdateRaceData = true;
+        bSendLightsAndRaceData = true;
+        return true;
+    }
+
+    if (ActionType.startsWith("SetDogs")) {
+        if (RaceHandler.RaceState != RaceHandler.RESET) {
+            bSendLightsAndRaceData = true;
+            return false;
+        }
+        int numDogs = ActionType.substring(7).toInt(); // extracts 1, 2, 3, or 4
+        if (numDogs >= 1 && numDogs <= 4) {
+            RaceHandler.SetNumberOfDogs(numDogs);
+            return true;
+        }
+        return false;
+    }
+
+    if (ActionType == "SetRerunsOff") {
+        if (ActionData == "null" || RaceHandler.RaceState != RaceHandler.RESET) return false;
+        bool rerunsOff = ActionObj["actionData"]["rerunsOff"];
+        RaceHandler.ToggleRerunsOffOn(rerunsOff ? 1 : 0);
+        return true;
+    }
+
+    log_d("Unknown action received: %s", ActionType.c_str());
+    return false;
 }
 
 void WebHandlerClass::_SendLightsData(int8_t iClientId)
@@ -575,8 +502,6 @@ bool WebHandlerClass::_ProcessConfig(JsonArray newConfig, String *ReturnError)
          save = true;
          if (key == "RunDirectionInverted")
             RaceHandler.ToggleRunDirection();
-         else if (key == "StartingSequenceNAFA")
-            LightsController.ToggleStartingSequence();
          else if (key == "Accuracy3digits")
             RaceHandler.ToggleAccuracy();
          else if (key == "CommaInCsv")

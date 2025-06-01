@@ -3,7 +3,7 @@
 #define _WEBHANDLER_h
 
 #include "config.h"
-#include "Arduino.h"
+#include <Arduino.h>
 #include "SettingsManager.h"
 #include <Hash.h>
 #include <WiFi.h>
@@ -21,7 +21,7 @@
 #include "GPSHandler.h"
 #include <rom/rtc.h>
 #ifndef WebUIonSDcard
-#include "index.html.gz.h"
+#include <index.html.gz.h>
 #include "ota&fs.h"
 #endif
 

@@ -1,4 +1,7 @@
 //
+#include <Arduino.h>
+#include "config.h"
+#include "Structs.h"
 #include "GPSHandler.h"
 #include "LCDController.h"
 using namespace std;
@@ -41,10 +44,10 @@ void GPSHandlerClass::loop()
          _FormatTime();
          LCDController.UpdateField(LCDController.GpsState, "G");
          LCDController.bExecuteLCDUpdate = true;
-         if (!_bGSPconnected)
+         if (!_bGPSConnected)
          {
             log_i("GPS connected. Updated UTC time: %s. Updated local time: %s", _cUTCTime, _cLocalDateAndTime);
-            _bGSPconnected = true;
+            _bGPSConnected = true;
          }
       }
    }
@@ -52,7 +55,7 @@ void GPSHandlerClass::loop()
 
 char *GPSHandlerClass::GetUtcDateAndTime()
 {
-   if (!_bGSPconnected)
+   if (!_bGPSConnected)
    {
       tmElements_t tm;
       timeLocal = euCentral.toUTC(now());

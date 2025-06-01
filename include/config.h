@@ -16,33 +16,41 @@
 #ifndef GLOBALCONST_H
 #define GLOBALCONST_H
 
-#define MICROS esp_timer_get_time()
+#define MICROS esp_timer_get_time()  // ✅ Great — wraps the ESP32 microsecond timer
 
-#undef CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-#undef CONFIG_ESP_COREDUMP_CHECK_BOOT
+// ❗ These ESP config macros are okay to redefine if needed, 
+// but you may want to verify these match sdkconfig if you're using IDF stuff.
+// Here, it just forces UART dump:
 #define CONFIG_ESP_COREDUMP_ENABLE_TO_UART 1
 
-#define FW_VER "1.18.4  "         // Flyball ETS firmware version
+// ✅ Firmware version
+#define FW_VER "0.0.1"
 
-#define Simulate false            // Set to true to enable race simulation (see Simulator.h/.cpp)
-#define NumSimulatedRaces 10      // Number of prepeared simulated races. Sererial interface command to change interface: e.g. "race 1"
+// ✅ Simulation flags
+#define Simulate false
+#define NumSimulatedRaces 10
 
-#define TRIGGER_QUEUE_LENGTH 110  // Number of triggers in the queue
+// ✅ Trigger queue size (used for timing events?)
+#define TRIGGER_QUEUE_LENGTH 110
 
-#define WiFiON                    // If defined all WiFi features are on: OTA, Web server. Please be carefull. Keep remote receiver board (antenna) away from ESP32 to avoid interferences.
-//#define WebUIonSDcard           
+// ✅ LED config
+#define LIGHTSCHAINS 2  // 2 strips = 10 LEDs total if each chain has 5
+
+// ✅ WiFi feature toggle
+#define WiFiON  // Can be commented out to disable OTA/WebServer/etc.
+//#define WebUIonSDcard  // Optional override
 #define BatteryCalibration false
 
-#define LIGHTSCHAINS 1            // Numer of WS281x lights chains. 1 - one chain of 5 pixels/lights, 2 - two chains --> 10 pixels/lights, etc.
-#define WS_METHOD NeoWs2812xMethod
+// ✅ EEPROM and flash settings
+#define EEPROM_SIZE 4096
+#define SPI_FLASH_SEC_SIZE 4096
+#define U_PART U_SPIFFS  // Logical name for flash partition
 
-#define EEPROM_SIZE 4096          // EEPROM size in bytes
-#define SPI_FLASH_SEC_SIZE 4096   // Flash Sector Size declaration for ESP32 as it seems to become removed from embedded libraries
-#define U_PART U_SPIFFS
+// ✅ Websocket timeout
+#define WS_TICKET_BUFFER_SIZE 8
+#define WS_TIMEOUT 1800000  // 30 minutes in milliseconds
 
-#define WS_TICKET_BUFFER_SIZE 8   // Number of websocket tickets kept in memory
-#define WS_TIMEOUT 1800000        // Timeout for secured websocket in miliseconds
-
-#define APP_VER "1.2.0"           // WebUI version
+// ✅ Web UI version
+#define APP_VER "1.2.0"
 
 #endif

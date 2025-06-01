@@ -3,7 +3,7 @@
 #ifndef _SETTINGSMANAGER_h
 #define _SETTINGSMANAGER_h
 
-#include "Arduino.h"
+#include <Arduino.h>
 
 
 class SettingsManagerClass

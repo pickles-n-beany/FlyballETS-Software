@@ -5,6 +5,9 @@
 #include "Simulator.h"
 #include "RaceHandler.h"
 #include "PROGMEM_readAnything.h"
+#include <Arduino.h>
+#include "config.h"
+#include "Structs.h"
 
 /// <summary>
 ///   Initialises this object.

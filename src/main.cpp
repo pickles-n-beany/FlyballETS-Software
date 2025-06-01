@@ -22,18 +22,19 @@
 // You should have received a copy of the GNU General Public License along with this program.If not,
 // see <http://www.gnu.org/licenses/>
 #include "main.h"
+#include <Arduino.h>
+#include "config.h"
+#include "Structs.h"
 
 // Declare WS2811B compatibile lights strip
-NeoPixelBus<NeoRgbFeature, WS_METHOD> LightsStrip(5 * LIGHTSCHAINS, iLightsDataPin);
-
-// Declare 40x4 LCD by 2 virtual LCDes
-LiquidCrystal lcd1(iLCDRSPin, iLCDE1Pin, iLCDData4Pin, iLCDData5Pin, iLCDData6Pin, iLCDData7Pin);  // this will be line 1&2 of 40x4 LCD
-LiquidCrystal lcd2(iLCDRSPin, iLCDE2Pin, iLCDData4Pin, iLCDData5Pin, iLCDData6Pin, iLCDData7Pin); // this will be line 3&4 of 40x4 LCD
+#define NUMPIXELS (5 * LIGHTSCHAINS)
+#define LED_PIN 18  // or whatever pin you're using
+Adafruit_NeoPixel LightsStrip(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // IP addresses declaration
-IPAddress IPGateway(192, 168, 20, 1);
-IPAddress IPNetwork(192, 168, 20, 0);
-IPAddress IPSubnet(255, 255, 255, 0);
+//IPAddress IPGateway(192, 168, 20, 1);
+//IPAddress IPNetwork(192, 168, 20, 0);
+//IPAddress IPSubnet(255, 255, 255, 0);
 
 // Statically allocate and initialize the spinlock
 static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -44,50 +45,41 @@ void setup()
    SettingsManager.init();
 
    // Configure sensors pins
-   pinMode(iS1Pin, INPUT_PULLDOWN); // ESP32 has no pull-down resistor on pin 34, but it's pulled-down anyway by 1kohm resistor in voltage leveler circuit
-   pinMode(iS2Pin, INPUT_PULLDOWN);
+   //pinMode(iS1Pin, INPUT_PULLDOWN); // ESP32 has no pull-down resistor on pin 34, but it's pulled-down anyway by 1kohm resistor in voltage leveler circuit
+   //pinMode(iS2Pin, INPUT_PULLDOWN);
 
    // Initialize lights
-   pinMode(iLightsDataPin, OUTPUT);
+      LightsStrip.begin();
+      LightsStrip.show();  // Clear to start
 
-   // Configure pins for shift register
-   pinMode(iLatchPin, OUTPUT);
-   pinMode(iClockPin, OUTPUT);
-   pinMode(iDataInPin, INPUT_PULLDOWN);
+   //Initialise LCD
+      Wire.begin(47, 48); // SDA, SCL – match your actual I2C pins
+      LCDController.initI2C(); // Call the method properly
 
    // Configure pins for SD Card
-   pinMode(iSDdata0Pin, INPUT_PULLUP);
-   pinMode(iSDdata1Pin, INPUT_PULLUP);
-   pinMode(iSDcmdPin, INPUT_PULLUP);
-   pinMode(iSDdetectPin, INPUT_PULLUP);
-
-   // Configure LCD pins
-   pinMode(iLCDData4Pin, OUTPUT);
-   pinMode(iLCDData5Pin, OUTPUT);
-   pinMode(iLCDData6Pin, OUTPUT);
-   pinMode(iLCDData7Pin, OUTPUT);
-   pinMode(iLCDE1Pin, OUTPUT);
-   pinMode(iLCDE2Pin, OUTPUT);
-   pinMode(iLCDRSPin, OUTPUT);
+   //pinMode(iSDdata0Pin, INPUT_PULLUP);
+   //pinMode(iSDdata1Pin, INPUT_PULLUP);
+   //pinMode(iSDcmdPin, INPUT_PULLUP);
+   //pinMode(iSDdetectPin, INPUT_PULLUP);
 
    // Set ISR's with wrapper functions
-#if !Simulate
-   attachInterrupt(digitalPinToInterrupt(iS1Pin), Sensor1Wrapper, CHANGE);
-   attachInterrupt(digitalPinToInterrupt(iS2Pin), Sensor2Wrapper, CHANGE);
-#endif
+//#if !Simulate
+   //attachInterrupt(digitalPinToInterrupt(iS1Pin), Sensor1Wrapper, CHANGE);
+   //attachInterrupt(digitalPinToInterrupt(iS2Pin), Sensor2Wrapper, CHANGE);
+//#endif
 
    // Configure Laser output pin
-   pinMode(iLaserOutputPin, OUTPUT);
+   //pinMode(iLaserOutputPin, OUTPUT);
 
    // Configure GPS PPS pin
-   pinMode(iGPSppsPin, INPUT_PULLDOWN);
+   //pinMode(iGPSppsPin, INPUT_PULLDOWN);
 
    // Print SW version
    Serial.printf("Firmware version: %s\r\n", FW_VER);
    Serial.printf("FW compilation date: %s\r\n",__DATE__);
 
    // Initialize BatterySensor class with correct pin
-   BatterySensor.init(iBatterySensorPin);
+   //BatterySensor.init(iBatterySensorPin);
 
    // Initialize LightsController class
    xTaskCreatePinnedToCore(
@@ -99,21 +91,17 @@ void setup()
       &taskLights,
       1);
 
-   // Initialize LCDController class with lcd1 and lcd2 objects
-   LCDController.init(&lcd1, &lcd2);
-
-   strSerialData[0] = 0;
-
    // Initialize GPS
-   GPSHandler.init(iGPSrxPin, iGPStxPin);
+   //GPSHandler.init(iGPSrxPin, iGPStxPin);
    
    // SD card init
-   if (digitalRead(iSDdetectPin) == LOW)
-      SDcardController.init();
-   else
-      Serial.println("SD Card not inserted!");
+   //if (digitalRead(iSDdetectPin) == LOW)
+      //SDcardController.init();
+   //else
+      //Serial.println("SD Card not inserted!");
 
    // Initialize RaceHandler class with S1 and S2 pins
+   /*
    xTaskCreatePinnedToCore(
       Core1Race,
       "Race",
@@ -123,76 +111,77 @@ void setup()
       &taskRace,
       1);
 
-#ifdef WiFiON
+      */
+
+//#ifdef WiFiON
    // Setup AP
-   WiFi.onEvent(WiFiEvent);
-   WiFi.mode(WIFI_MODE_AP);
-   String strAPName = SettingsManager.getSetting("APName");
-   String strAPPass = SettingsManager.getSetting("APPass");
-   if (!WiFi.softAP(strAPName.c_str(), strAPPass.c_str()))
-      log_e("Error initializing softAP!");
-   else
-      log_i("Wifi started successfully, AP name: %s, pass: %s", strAPName.c_str(), strAPPass.c_str());
+   //WiFi.onEvent(WiFiEvent);
+   //WiFi.mode(WIFI_MODE_AP);
+   //String strAPName = SettingsManager.getSetting("APName");
+   //String strAPPass = SettingsManager.getSetting("APPass");
+   //if (!WiFi.softAP(strAPName.c_str(), strAPPass.c_str()))
+   //   log_e("Error initializing softAP!");
+   //else
+   //   log_i("Wifi started successfully, AP name: %s, pass: %s", strAPName.c_str(), strAPPass.c_str());
 
    // configure webserver
-   WebHandler.init(80);
-   mdnsServerSetup();
-#endif
+   // WebHandler.init(80);
+   //mdnsServerSetup();
+//#endif
 
-   iLaserOnTime = atoi(SettingsManager.getSetting("LaserOnTimer").c_str());
-   log_i("Configured laser ON time: %is", iLaserOnTime);
+   //iLaserOnTime = atoi(SettingsManager.getSetting("LaserOnTimer").c_str());
+   //log_i("Configured laser ON time: %is", iLaserOnTime);
 
-   log_w("ESP log level %i", CORE_DEBUG_LEVEL);
+   //log_w("ESP log level %i", CORE_DEBUG_LEVEL);
 }
 
-void loop()
-{
-   if (!WebHandler.bFwUpdateInProgress)
-   {
-      if (RaceHandler.RaceState == RaceHandler.STOPPED || RaceHandler.RaceState == RaceHandler.RESET)
-      {
-         SettingsManager.loop();
-         GPSHandler.loop();
-         BatterySensor.CheckBatteryVoltage();
-         SDcardController.CheckSDcardSlot(iSDdetectPin);
-      }
+//void loop()
+//{
+   //if (!WebHandler.bFwUpdateInProgress)
+   //{
+      //if (RaceHandler.RaceState == RaceHandler.STOPPED || RaceHandler.RaceState == RaceHandler.RESET)
+      //{
+      //   SettingsManager.loop();
+      //   GPSHandler.loop();
+      //   BatterySensor.CheckBatteryVoltage();
+      //   SDcardController.CheckSDcardSlot(iSDdetectPin);
+      //}
 
-      serialEvent();
+     // serialEvent();
 
-      if (bSerialStringComplete)
-         HandleSerialCommands();
+      //if (bSerialStringComplete)
+      //   HandleSerialCommands();
 
-      HandleRemoteAndButtons();
-   }
-   else
-   {
-      vTaskSuspend(taskRace);
-      vTaskSuspend(taskLights);
-   }
+      //HandleRemoteAndButtons();
+   //}
+   //else
+   //{
+      ///vTaskSuspend(taskRace);
+      //vTaskSuspend(taskLights);
+   //}
 
-   LCDController.Main();
 
-#ifdef WiFiON
-   WebHandler.loop();
-#endif
-}
+//#ifdef WiFiON
+   //WebHandler.loop();
+//#endif
+//}
 
-void serialEvent()
-{
+//void serialEvent()
+//{
    // Listen on serial port
-   while (Serial.available() > 0)
-   {
-      char cInChar = Serial.read();
-      if (cInChar == '\n')
-      {
-         bSerialStringComplete = true;
-         log_d("SERIAL received: '%s'", strSerialData.c_str());
-         strSerialData += '\0';
-         break;
-      }
-      strSerialData += cInChar;
-   }
-}
+//   while (Serial.available() > 0)
+   //{
+     // char cInChar = Serial.read();
+      //if (cInChar == '\n')
+   //   {
+   //      bSerialStringComplete = true;
+   //      log_d("SERIAL received: '%s'", strSerialData.c_str());
+   //      strSerialData += '\0';
+   //      break;
+   //   }
+   //   strSerialData += cInChar;
+   //}
+//}
 
 /// <summary>
 ///   These are wrapper functions which are necessary because it's not allowed to use a class member function directly as an ISR
@@ -215,12 +204,10 @@ void IRAM_ATTR Sensor2Wrapper()
 /// </summary>
 void StartRaceMain()
 {
-   if (RaceHandler.RaceState != RaceHandler.RESET)
-      return;
-   if (LightsController.bModeNAFA)
-      LightsController.WarningStartSequence();
-   else
-      LightsController.InitiateStartSequence();
+    if (RaceHandler.RaceState != RaceHandler.RESET)
+        return;
+
+    LightsController.InitiateStartSequence();
 }
 
 /// <summary>
@@ -256,64 +243,65 @@ void ResetRace()
    LightsController.bExecuteResetLights = true;
 }
 
-#ifdef WiFiON
-void WiFiEvent(arduino_event_id_t event)
-{
-   switch (event)
-   {
-   case ARDUINO_EVENT_WIFI_AP_START:
-      WiFi.softAPConfig(IPGateway, IPGateway, IPSubnet);
-      if (WiFi.softAPIP() != IPGateway)
-      {
-         log_e("I am not running on the correct IP (%s instead of %s), rebooting!", WiFi.softAPIP().toString().c_str(), IPGateway.toString().c_str());
-         ESP.restart();
-      }
-      log_i("Ready on IP: %s, v%s", WiFi.softAPIP().toString().c_str(), APP_VER);
-      break;
+//#ifdef WiFiON
+//void WiFiEvent(arduino_event_id_t event)
+//{
+   //switch (event)
+   //{
+   //case ARDUINO_EVENT_WIFI_AP_START:
+      //WiFi.softAPConfig(IPGateway, IPGateway, IPSubnet);
+      //if (WiFi.softAPIP() != IPGateway)
+      //{
+       //  log_e("I am not running on the correct IP (%s instead of %s), rebooting!", WiFi.softAPIP().toString().c_str(), IPGateway.toString().c_str());
+      //   ESP.restart();
+      //}
+      //log_i("Ready on IP: %s, v%s", WiFi.softAPIP().toString().c_str(), APP_VER);
+      //break;
 
-   case ARDUINO_EVENT_WIFI_AP_STOP:
-      break;
+   //case ARDUINO_EVENT_WIFI_AP_STOP:
+     // break;
 
-   case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
-      break;
+   //case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
+     // break;
 
-   case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
-      break;
+   //case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
+      //break;
 
-   default:
-      break;
-   }
-}
+   //default:
+      //break;
+  // }
+//}
 
-void ToggleWifi()
-{
-   if (WiFi.getMode() == WIFI_MODE_AP)
-   {
-      WiFi.mode(WIFI_OFF);
-      LCDController.UpdateField(LCDController.WifiState, " ");
-      LCDController.bExecuteLCDUpdate = true;
-      log_i("WiFi OFF");
-   }
-   else
-   {
-      WiFi.mode(WIFI_AP);
-      LCDController.UpdateField(LCDController.WifiState, "W");
-      LCDController.bExecuteLCDUpdate = true;
-      log_i("WiFi ON");
-   }
-}
+//void ToggleWifi()
+//{
+   //if (WiFi.getMode() == WIFI_MODE_AP)
+   //{
+   ////   WiFi.mode(WIFI_OFF);
+   //   LCDController.UpdateField(LCDController.WifiState, " ");
+   //   LCDController.bExecuteLCDUpdate = true;
+   //   log_i("WiFi OFF");
+  //}
+   //else
+   //{
+   //   WiFi.mode(WIFI_AP);
+   //   LCDController.UpdateField(LCDController.WifiState, "W");
+   //   LCDController.bExecuteLCDUpdate = true;
+   //   log_i("WiFi ON");
+  // }
+//}
 
-void mdnsServerSetup()
-{
-   if (!MDNS.begin("flyballets")) {
-      Serial.println("Error setting up MDNS responder!");
-      return;
-   }
-   log_i("mDNS responder started");
-   MDNS.addService("http", "tcp", 80);
-}
-#endif
+//void mdnsServerSetup()
+//{
+  // if (!MDNS.begin("flyballets")) {
+    //  Serial.println("Error setting up MDNS responder!");
+      //return;
+   //}
+   //log_i("mDNS responder started");
+   //MDNS.addService("http", "tcp", 80);
+//}
+//#endif
 
+/*
 void HandleSerialCommands()
 {
    // Race start
@@ -433,8 +421,10 @@ void HandleSerialCommands()
       bSerialStringComplete = false;
    }
 }
+*/
 
-void HandleRemoteAndButtons()
+
+/* void HandleRemoteAndButtons()
 {
    byDataIn = 0;
    digitalWrite(iLatchPin, LOW);
@@ -531,11 +521,12 @@ void HandleRemoteAndButtons()
       log_i("Turn Laser OFF.");
    }
 }
-
+   */
+/*
 /// <summary>
 ///   Factory Reset - erasing and initializing NVM.
 /// </summary>
-void FactoryReset()
+/*void FactoryReset()
 {
    Serial.println("Trying to erse all NVS flash...");
    if (nvs_flash_erase() != ESP_OK) Serial.println("===> Error with Flash Erase.");
@@ -548,6 +539,7 @@ void FactoryReset()
 /// <summary>
 ///   Gets pressed button string for consol printing.
 /// </summary>
+/*
 String GetButtonString(uint8_t _iActiveBit)
 {
    String strButton;
@@ -610,5 +602,37 @@ void Core1Lights(void *parameter)
       vTaskDelay(1 / portTICK_PERIOD_MS);
    }
 }
+*/
+void loop() {
+   if (Serial.available()) {
+      char input = Serial.read();
 
+      switch (input) {
+         case 's':  // start
+            Serial.println("Starting race!");
+            LightsController.InitiateStartSequence();
+            break;
 
+         case 'x':  // stop
+            Serial.println("Stopping race!");
+            LightsController.DeleteSchedules();
+            RaceHandler.bExecuteStopRace = true;
+            break;
+
+         case 'r':  // reset
+            Serial.println("Resetting race!");
+            RaceHandler.bExecuteResetRace = true;
+            LightsController.bExecuteResetLights = true;
+            break;
+
+         case 'f':  // fault dog 0
+            Serial.println("Triggering dog fault!");
+            RaceHandler.SetDogFault(0);  // simulate fault for dog 0
+            break;
+      }
+   }
+
+   // Always keep this ticking
+   LightsController.Main();
+   delay(10);
+}

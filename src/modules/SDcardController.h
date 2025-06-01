@@ -17,7 +17,7 @@
 #ifndef _SDCARDCONTROLLER_h
 #define _SDCARDCONTROLLER_h
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "GPSHandler.h"
 #include "RaceHandler.h"
 #include "LCDController.h"

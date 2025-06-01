@@ -23,6 +23,8 @@
 #include "config.h"
 #include "WebHandler.h"
 #include "SDcardController.h"
+#include <Arduino.h>
+#include "Structs.h"
 
 /// <summary>
 ///   Initialises this object andsets all counters to 0.

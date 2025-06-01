@@ -18,6 +18,8 @@
 
 #include "SDcardController.h"
 #include "config.h"
+#include <Arduino.h>
+#include "Structs.h"
 
 /// <summary>
 ///   Initialises SD card.

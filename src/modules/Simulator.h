@@ -3,7 +3,7 @@
 #define _SIMULATOR_h
 
 #include "config.h"
-#include "Arduino.h"
+#include <Arduino.h>
 
 class SimulatorClass
 {

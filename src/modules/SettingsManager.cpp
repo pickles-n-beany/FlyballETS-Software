@@ -3,6 +3,8 @@
 #include <EEPROM.h>
 #include <SPIFFS.h>
 #include "config.h"
+#include <Arduino.h>
+#include "Structs.h"
 
 void SettingsManagerClass::loop()
 {

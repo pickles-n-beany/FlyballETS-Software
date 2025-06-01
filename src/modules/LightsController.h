@@ -1,93 +1,66 @@
 // LightsController.h
 // Copyright (C) 2019 Alex Goris
-// This file is part of FlyballETS-Software
-// FlyballETS-Software is free software : you can redistribute it and / or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.If not, see <http://www.gnu.org/licenses/>
+// Licensed under the GNU GPL v3
 
-#ifndef _LIGHTSCONTROLLER_h
-#define _LIGHTSCONTROLLER_h
+#ifndef _LIGHTSCONTROLLER_H
+#define _LIGHTSCONTROLLER_H
 
-#include "Arduino.h"
-#include <NeoPixelBus.h>
+#include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
 #include "config.h"
 #include "Structs.h"
 
-class LightsControllerClass
-{
+class LightsControllerClass {
    friend class WebHandlerClass;
 
-protected:
 public:
-   void init(NeoPixelBus<NeoRgbFeature, WS_METHOD> *LightsStrip);
+   enum LightStates { OFF = 0, ON = 1 };
 
-   bool bModeNAFA = false;
-   volatile bool bS1ExecuteRaceReadyFaultON;
-   volatile bool bS2ExecuteRaceReadyFaultON;
-   volatile bool bS1ExecuteRaceReadyFaultOFF;
-   volatile bool bS2ExecuteRaceReadyFaultOFF;
-   volatile bool bExecuteResetLights;
-
-   // Overal state of this class
-   enum OverallStates
-   {
-      WARNING,
-      INITIATED,
-      RESET,
-      STARTING,
-      STARTED
+   enum Lights {
+      WHITE0, RED0,      // pixel 0
+      YELLOW1, RED1,     // pixel 1
+      YELLOW2, BLUE2,    // pixel 2
+      YELLOW3, GREEN4    // pixels 3 and 4
    };
 
+   enum OverallStates { WARNING, INITIATED, RESET, STARTING, STARTED };
    OverallStates byOverallState = RESET;
 
-   // Possible pixel colors (unique names needed)
-   enum Lights
-   {
-      WHITE0,  // pixel 0
-      RED0,    // pixel 0
-      YELLOW1, // pixel 1
-      RED1,    // pixel 1
-      YELLOW2, // pixel 2
-      BLUE2,   // pixel 2
-      YELLOW3, // pixel 3
-      GREEN4   // pixel 4
-   };
-
-   enum LightStates
-   {
-      OFF,
-      ON,
-   };
-
-   LightStates CheckLightState(Lights byLight);
+   void init(Adafruit_NeoPixel* LightsStrip);
    void Main();
+
    void HandleStartSequence();
    void InitiateStartSequence();
    void WarningStartSequence();
-   void ToggleLightState(Lights byLight, LightStates byLightState);
+
+   void ToggleLightState(uint8_t pixelIndex, uint32_t color);           // legacy direct pixel control
+   void ToggleLightState(Lights byLight, LightStates state);           // main mapped LED control
+
    void ResetLights();
    void DeleteSchedules();
-   void ToggleFaultLight(uint8_t iDogNumber, LightStates byLightState);
-   void ReaceReadyFault(LightStates byLightState);
-   void ToggleStartingSequence();
+   void ToggleFaultLight(uint8_t iDogNumber, LightStates state);
+   void RaceReadyFault(LightStates state);
 
    stLightsState GetLightsState();
+   LightStates CheckLightState(Lights byLight);
+
+   // Public control flags
+   volatile bool bS1ExecuteRaceReadyFaultON = false;
+   volatile bool bS2ExecuteRaceReadyFaultON = false;
+   volatile bool bS1ExecuteRaceReadyFaultOFF = false;
+   volatile bool bS2ExecuteRaceReadyFaultOFF = false;
+   volatile bool bExecuteResetLights = false;
 
 private:
-   // Neopixel object
-   // Adafruit_NeoPixel _LightsStrip;
-   NeoPixelBus<NeoRgbFeature, WS_METHOD> *_LightsStrip;
+   struct SNeoPixelConfig {
+      uint8_t iPixelNumber;
+      uint32_t iColor;
+   };
 
-   // This byte contains the combined states of all ligths at any given time
+   SNeoPixelConfig _GetNeoPixelConfig(Lights byLight);
+
+   Adafruit_NeoPixel* _LightsStrip = nullptr;
+
    byte _byCurrentLightsState = 255;
    byte _byNewLightsState = 0;
 
@@ -98,30 +71,15 @@ private:
    unsigned long _lLightsOutSchedule[8];
 
    Lights _byLightsArray[8] = {
-      WHITE0,  // 0
-      RED0,    // 1
-      YELLOW1, // 2
-      RED1,    // 3
-      YELLOW2, // 4
-      BLUE2,   // 5
-      YELLOW3, // 6
-      GREEN4}; // 7
-
-   Lights _byDogErrorLigths[4] = {
-      RED1,
-      BLUE2,
-      YELLOW3,
-      GREEN4};
-
-   struct SNeoPixelConfig
-   {
-      //uint32_t iColor;
-      RgbColor iColor;
-      uint8_t iPixelNumber;
+      WHITE0, RED0, YELLOW1, RED1,
+      YELLOW2, BLUE2, YELLOW3, GREEN4
    };
-   SNeoPixelConfig _GetNeoPixelConfig(Lights byLight);
+
+   Lights _byDogErrorLights[4] = {
+      RED1, BLUE2, YELLOW3, GREEN4
+   };
 };
 
 extern LightsControllerClass LightsController;
 
-#endif
+#endif // _LIGHTSCONTROLLER_H

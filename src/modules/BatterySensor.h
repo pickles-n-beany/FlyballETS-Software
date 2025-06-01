@@ -17,7 +17,7 @@
 #ifndef _BATTERYSENSOR_h
 #define _BATTERYSENSOR_h
 
-#include "Arduino.h"
+#include <Arduino.h>
 
 class BatterySensorClass
 {

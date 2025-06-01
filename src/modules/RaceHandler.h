@@ -3,7 +3,7 @@
 #define _RACEHANDLER_h
 
 #include "Structs.h"
-#include "Arduino.h"
+#include <Arduino.h>
 #include "config.h"
 #if Simulate
 #include "Simulator.h"
